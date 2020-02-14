@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Primary;
 
 import javax.sql.DataSource;
 import java.sql.SQLException;
+//http://127.0.0.1:8081/shiro-example/druid/index.html 进行访问
 
 @Configuration
 public class DruidDBConfig {

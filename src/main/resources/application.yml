@@ -7,7 +7,7 @@ server:
     min-spare-threads: 100
     uri-encoding: utf-8
   servlet:
-    context-path: /aidunBase
+    context-path: /shiro-example
 
 
 spring:
