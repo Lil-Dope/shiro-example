@@ -1,0 +1,73 @@
+server:
+  port: 8081
+  tomcat:
+    accept-count: 200
+    max-connections: 10000
+    max-threads: 1000
+    min-spare-threads: 100
+    uri-encoding: utf-8
+  servlet:
+    context-path: /aidunBase
+
+
+spring:
+  application:
+    name: aidun-admin-system
+  profiles:
+    active: @profiles.active@
+  aop:
+    proxy-target-class: true
+  resources:
+    static-locations:
+      - file:.static/,classpath:/META-INF/resources/,classpath:/static/
+
+  redis:
+    timeout: 5000ms
+    jedis:
+      pool:
+        max-active: 1000
+        max-idle: 200
+        max-wait: 3000ms
+        min-idle: 100
+      shutdown-timeout: 200ms
+
+
+  datasource:
+    connectionProperties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=5000
+    type: com.alibaba.druid.pool.DruidDataSource
+    driver-class-name: com.mysql.jdbc.Driver
+    initial-size: 20
+    max-active: 500
+    min-idle: 1
+    max-wait: 60000
+    validation-query: SELECT 'x'
+    validation-query-timeout: 3000
+    test-on-borrow:  false
+    test-on-return: false
+    test-while-idle: true
+    time-between-eviction-runs-millis: 60000
+    min-evictable-idle-time-millis: 300000
+    filters: stat,wall
+    query-timeout: 5000
+
+mybatis-plus:
+  mapper-locations: classpath*:mapper/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+    cache-enabled: false
+    use-generated-keys: true
+    lazyLoadingEnabled: true
+    multipleResultSetsEnabled: true
+    mapUnderscoreToCamelCase: true
+
+pagehelper:
+  helperDialect: mysql
+  reasonable: true
+  supportMethodsArguments: true
+  pageSizeZero: true
+  params: count=countSql
+
+logging:
+  level:
+    root: info
+  path: ${catalina.base:.}/logs

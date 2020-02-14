@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cnaidun.police.mapper.UserInfoMapper">
+
+    <resultMap type="com.cnaidun.police.entity.UserInfo" id="userInfoResult">
+        <result property="id" column="id"/>
+        <result property="account" column="account"/>
+        <result property="userName" column="user_name"/>
+        <result property="password" column="password"/>
+        <result property="salt" column="salt"/>
+        <result property="state" column="state"/>
+        <collection property="roleList" select="findRoleList" column="id"/>
+    </resultMap>
+
+    <resultMap id="roleListMap" type="com.cnaidun.police.entity.SysRole">
+        <id property="id" column="id"/>
+        <result property="role" column="role"/>
+        <result property="description" column="description"/>
+        <result property="available" column="available"/>
+        <collection property="permissions" select="findPermissionList" column="id"/>
+    </resultMap>
+
+    <resultMap id="permissionsMap" type="com.cnaidun.police.entity.SysPermission">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="resourceType" column="resource_type"/>
+        <result property="url" column="url"/>
+        <result property="permission" column="permission"/>
+        <result property="parentId" column="parent_id"/>
+        <result property="icon" column="icon"/>
+    </resultMap>
+
+    <insert id="addUserInfo" parameterType="com.cnaidun.police.entity.UserInfo" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_user(
+        account,
+        user_name,
+        password,
+        salt,
+        create_time
+        )VALUES(
+        #{account},
+        #{userName},
+        #{password},
+        #{salt},
+        now()
+        )
+    </insert>
+
+    <update id="updateUserInfo">
+        UPDATE sys_user u
+        SET
+        u.user_name =#{userName},
+        u.password =#{password},
+        u.salt =#{salt}
+        WHERE
+        u.id = #{id}
+    </update>
+
+    <update id="dropUserInfo">
+        UPDATE sys_user u
+        SET
+        u.state = '0'
+        WHERE
+        u.id = #{id}
+    </update>
+
+    <update id="updatePWD">
+        UPDATE sys_user u
+        SET
+        u.password = #{password},
+        u.salt = #{salt}
+        WHERE
+        u.id = #{id}
+    </update>
+
+
+    <select id="findByAccount" parameterType="java.lang.String" resultMap="userInfoResult">
+        SELECT
+            userInfo.*
+        FROM
+            sys_user userInfo
+        WHERE
+            userInfo.account = #{account}
+        AND userInfo.state = '1'
+    </select>
+
+    <select id="findRoleList" parameterType="java.lang.Integer" resultMap="roleListMap">
+        SELECT
+            sysRole.*
+        FROM
+            sys_role sysRole
+        LEFT JOIN sys_user_role sysUserRole ON sysRole.id = sysUserRole.role_id
+        WHERE
+            sysUserRole.user_id = #{userId}
+        AND sysRole.available = '1'
+    </select>
+
+    <select id="findPermissionList" parameterType="java.lang.Integer" resultMap="permissionsMap">
+        SELECT
+            sysPermission.*
+        FROM
+            sys_permission sysPermission
+        LEFT JOIN sys_role_permission sysRolePermission ON sysPermission.id = sysRolePermission.permission_id
+        WHERE
+            sysRolePermission.role_id = #{roleId}
+        AND sysPermission.available = '1'
+    </select>
+
+    <select id="findUserPermissions" parameterType="java.lang.String" resultType="com.cnaidun.police.dto.MenuResponseDTO">
+        SELECT
+            sysPermission.id id,
+            sysPermission.`name` label,
+            sysPermission.resource_type type,
+            sysPermission.url url,
+            sysPermission.button_type buttonType,
+            sysPermission.parent_id parentId,
+            sysPermission.icon icon
+        FROM
+            sys_user userInfo
+        LEFT JOIN sys_user_role sysUserRole ON userInfo.id = sysUserRole.user_id
+        LEFT JOIN sys_role sysRole ON sysUserRole.role_id = sysRole.id
+        LEFT JOIN sys_role_permission sysRolePermission ON sysRole.id = sysRolePermission.role_id
+        LEFT JOIN sys_permission sysPermission ON sysRolePermission.permission_id = sysPermission.id
+        WHERE
+            userInfo.account = #{account}
+        AND userInfo.state = '1'
+        AND sysPermission.available = '1'
+        AND sysRole.available = '1'
+        GROUP BY
+            sysPermission.id
+        ORDER BY
+	        sysPermission.sort DESC
+    </select>
+
+    <select id="queryAll" resultType="java.util.Map">
+        SELECT
+        u.id as id,
+        u.user_name as userName,
+        date_format(u.create_time, '%Y-%m-%d %H:%i:%S') createTime
+        FROM
+        sys_user u
+        where u.state = '1'
+        and u.account!='aidun'
+    </select>
+
+    <select id="getSalt" resultType="java.lang.String">
+        SELECT
+        u.salt as salt
+        FROM
+        sys_user u
+        WHERE
+        u.id = #{id}
+    </select>
+
+    <select id="isPasswordRight" resultType="java.lang.Boolean">
+        SELECT
+        COUNT(1)
+        FROM
+        sys_user u
+        WHERE
+        u.password = #{password}
+        AND
+        u.salt = #{salt}
+    </select>
+
+    <select id="allUserList" resultType="com.cnaidun.police.dto.UserInfoRequestDTO">
+        SELECT
+        u.id id,
+        u.user_name userName,
+        u.account account,
+        date_format(u.create_time, '%Y-%m-%d %H:%i:%S') createTime
+        FROM
+        sys_user u
+        where u.state = '1'
+        and u.account!='aidun'
+    </select>
+
+    <select id="findAccountByOpenId" parameterType="java.lang.String" resultType="java.lang.String">
+        SELECT account FROM sys_user WHERE open_id = #{openId} limit 1
+    </select>
+
+    <update id="updateOpenIdByAccount" parameterType="java.util.Map">
+        UPDATE sys_user SET open_id = #{openId} WHERE account = #{account}
+    </update>
+</mapper>

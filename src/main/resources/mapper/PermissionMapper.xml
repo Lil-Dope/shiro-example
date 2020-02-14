@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cnaidun.police.mapper.PermissionMapper">
+    <select id="findAllPermissions" resultType="com.cnaidun.police.dto.MenuResponseDTO">
+        SELECT
+            sysPermission.id id,
+            sysPermission.`name` label,
+            sysPermission.resource_type type,
+            sysPermission.url url,
+            sysPermission.button_type buttonType,
+            sysPermission.parent_id parentId,
+            sysPermission.icon icon
+        FROM
+            sys_permission sysPermission
+        WHERE
+            sysPermission.available = '1'
+    </select>
+
+    <select id="findSelectedPermissionId" resultType="java.lang.Integer" parameterType="java.lang.Integer">
+        SELECT
+            sysRolePermission.permission_id
+        FROM
+            sys_role_permission sysRolePermission
+        LEFT JOIN sys_permission sysPermission ON sysRolePermission.permission_id = sysPermission.id
+        WHERE
+            sysRolePermission.role_id = #{roleId}
+        AND sysPermission.resource_type = 'button'
+    </select>
+
+    <delete id="deleteByRoleId" parameterType="java.lang.Integer">
+        DELETE
+        FROM
+            sys_role_permission
+        WHERE
+            role_id = #{roleId}
+    </delete>
+
+    <insert id="insertRolePermission" parameterType="java.util.List">
+        INSERT INTO sys_role_permission(role_id,permission_id)
+        VALUES
+        <foreach collection="list" item="item" index= "index" separator =",">
+            (
+            #{item.roleId},
+            #{item.permissionId}
+            )
+        </foreach>
+    </insert>
+
+    <!--  根据菜单名分页获取菜单分页  -->
+    <select id="findPermissionByMenuName" resultType="com.cnaidun.police.dto.FindPermissionResponseDTO">
+        SELECT
+        id,
+        `name`,
+        `url`,
+        resource_type resourceType,
+        IFNULL((SELECT `name` FROM sys_permission per WHERE per.id = self.parent_id),'-') parentMenuName,
+        permission,
+        parent_id parentId,
+        button_type buttonType,
+        icon
+        FROM
+        sys_permission self
+        WHERE
+        self.available = 1
+        <if test="menuName!=null and menuName !=''">
+            AND self.`name` LIKE concat(#{menuName},'%')
+        </if>
+    </select>
+
+    <!--  根据id查找菜单是否存在  -->
+    <select id="findPermissionIdById" parameterType="java.lang.Integer" resultType="java.lang.Integer">
+        SELECT
+            id
+        FROM
+            sys_permission self
+        WHERE
+            self.available = 1 AND id = #{id}
+    </select>
+
+
+    <update id="modifyPermission" parameterType="com.cnaidun.police.dto.AddPermissionRequestDTO">
+        UPDATE `sys_permission`
+        SET
+         `name` = #{name},
+         `resource_type` = #{resourceType},
+         `url` = #{url},
+         `permission` = #{permission},
+         `parent_id` = #{parentId},
+         `available` = 1,
+         `button_type` = #{buttonType},
+         `icon` = #{icon}
+        WHERE
+            `id` = #{id}
+    </update>
+
+    <insert id="addPermission" parameterType="com.cnaidun.police.dto.AddPermissionRequestDTO" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO `sys_permission` (
+            `name`,
+            `resource_type`,
+            `url`,
+            `permission`,
+            `parent_id`,
+            `available`,
+            `button_type`,
+            `icon`
+        )
+        VALUES
+            (
+                #{name},
+                #{resourceType},
+                #{url},
+                #{permission},
+                #{parentId},
+                1,
+                #{buttonType},
+                #{icon}
+            )
+    </insert>
+
+    <update id="deletePermission" parameterType="java.lang.Integer">
+         UPDATE `sys_permission`
+         SET
+          `available` = 0
+         WHERE
+            `id` = #{id}
+    </update>
+
+    <insert id="addRolePermission" parameterType="com.cnaidun.police.entity.RolePermission">
+        INSERT INTO `sys_role_permission` (`role_id`, `permission_id`)
+        VALUES (#{roleId}, #{permissionId})
+    </insert>
+</mapper>

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cnaidun.police.mapper.RoleMapper">
+
+    <select id="allRolesList" resultType="com.cnaidun.police.dto.RoleListResponseDTO">
+        SELECT
+        r.id as "id",
+        r.role as "role",
+        r.description as "description",
+        date_format(r.create_time, '%Y-%m-%d %H:%i:%S') createTime
+        FROM sys_role r
+        WHERE
+        r.available = '1'
+        and r.role!='admin'
+    </select>
+
+    <select id="queryUsersByRole" resultType="java.util.Map">
+        SELECT
+        r.user_id as "userId",
+        u.user_name as "userName",
+        u.account as "account"
+        FROM
+        sys_user_role r
+        JOIN user_info u
+        ON r.user_id = u.id
+        WHERE
+        r.role_id =#{roleId}
+        AND
+        u.state = '1'
+    </select>
+
+    <delete id="deleteByRoleId" parameterType="java.lang.Integer">
+        DELETE
+        FROM
+            sys_user_role
+        WHERE
+            role_id = #{roleId}
+    </delete>
+
+    <insert id="insertUserRole" parameterType="java.util.List">
+        INSERT INTO sys_user_role(role_id,user_id)
+        VALUES
+        <foreach collection="list" item="item" index= "index" separator =",">
+            (
+            #{item.roleId},
+            #{item.userId}
+            )
+        </foreach>
+    </insert>
+
+    <insert id="addRole" parameterType="com.cnaidun.police.dto.AddRoleRequestDTO" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_role(role,description,create_time)
+        VALUES(#{role},#{description},now())
+    </insert>
+
+    <update id="updateRole" parameterType="com.cnaidun.police.dto.AddRoleRequestDTO">
+        UPDATE sys_role SET role=#{role},description=#{description}
+        WHERE id=#{id}
+    </update>
+
+    <update id="deleteRole" parameterType="java.lang.Integer">
+        UPDATE sys_role SET available=false
+        WHERE id=#{id}
+    </update>
+</mapper>
